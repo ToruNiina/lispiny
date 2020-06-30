@@ -80,7 +80,8 @@ constexpr bool is_reducible()
 {
     if constexpr (is_cons<Expr>::value)
     {
-        return is_applicable<car<Expr>, cdr<Expr>>();
+        return is_applicable<car<Expr>, cdr<Expr>>() ||
+               is_reducible<car<Expr>>() || is_reducible<cdr<Expr>>();
     }
     else
     {
@@ -91,9 +92,16 @@ constexpr bool is_reducible()
 template<auto Expr>
 constexpr auto evaluate()
 {
-    if constexpr (is_reducible<Expr>())
+    if constexpr (is_cons<Expr>::value)
     {
-        return evaluate<evaluate<car<Expr>>().template apply<cdr<Expr>>()>();
+        if constexpr (is_applicable<car<Expr>, cdr<Expr>>())
+        {
+            return evaluate<evaluate<car<Expr>>().template apply<cdr<Expr>>()>();
+        }
+        else
+        {
+            return cons<evaluate<car<Expr>>(), evaluate<cdr<Expr>>()>;
+        }
     }
     else
     {
