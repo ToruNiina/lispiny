@@ -1,3 +1,6 @@
+#ifndef LISPINY_HPP
+#define LISPINY_HPP
+
 #include <concepts>
 #include <compare>
 #include <iostream>
@@ -7,6 +10,20 @@
 
 namespace lispiny
 {
+
+/*   _____  __     _ _    */
+/*  |_   _|/ / __ (_) |   */
+/*    | | / / '_ \| | |   */
+/*    | |/ /| | | | | |   */
+/*    |_/_/ |_| |_|_|_|   */
+/*                        */
+
+inline constexpr std::nullptr_t nil = nullptr;
+inline constexpr bool           T   = true;
+
+template<auto Expr>
+struct is_nil: std::bool_constant<
+    std::is_same_v<std::remove_cvref_t<decltype(Expr)>, std::nullptr_t>>{};
 
 /*    ___ ___  _ __  ___    */
 /*   / __/ _ \| '_ \/ __|   */
@@ -23,6 +40,13 @@ template<typename Cons>      struct is_cons_t : std::false_type{};
 template<auto Car, auto Cdr> struct is_cons_t<cons_t<Car, Cdr>>: std::true_type{};
 template<auto Cons>
 struct is_cons : is_cons_t<std::remove_cvref_t<decltype(Cons)>> {};
+
+template<auto Car, auto Cdr>
+std::ostream& operator<<(std::ostream& os, cons_t<Car, Cdr>)
+{
+    os << '(' << Car << ' ' << Cdr << ')';
+    return os;
+}
 
 /*                  __      _        */
 /*   ___ __ _ _ __ / /__ __| |_ __   */
@@ -56,6 +80,36 @@ struct cdr_t
 };
 template<auto Cons>
 inline constexpr auto cdr = cdr_t<Cons>::value;
+
+/*    _ _     _      */
+/*   | (_)___| |_    */
+/*   | | / __| __|   */
+/*   | | \__ \ |_    */
+/*   |_|_|___/\__|   */
+/*                   */
+
+// just an alias of `cons< cons< cons< ... > > >`.
+
+template<auto Car, auto ... Cdr>
+constexpr auto expand_list()
+{
+    if constexpr (sizeof...(Cdr) == 0)
+    {
+        return cons<Car, nil>;
+    }
+    else
+    {
+        return cons<Car, expand_list<Cdr...>()>;
+    }
+}
+
+template<auto ... Elem>
+struct list_t
+{
+    static constexpr auto value = expand_list<Elem...>();
+};
+template<auto ... Elem>
+inline constexpr auto list = list_t<Elem...>::value;
 
 /*                   _    */
 /*    _____   ____ _| |   */
@@ -183,20 +237,6 @@ struct lambda_t
 template<auto Body>
 inline constexpr lambda_t<Body> lambda;
 
-/*   _____  __     _ _    */
-/*  |_   _|/ / __ (_) |   */
-/*    | | / / '_ \| | |   */
-/*    | |/ /| | | | | |   */
-/*    |_/_/ |_| |_|_|_|   */
-/*                        */
-
-inline constexpr std::nullptr_t nil = nullptr;
-inline constexpr bool           T   = true;
-
-template<auto Expr>
-struct is_nil: std::bool_constant<
-    std::is_same_v<std::remove_cvref_t<decltype(Expr)>, std::nullptr_t>>{};
-
 /*               _ _   _                    _   _         */
 /*     __ _ _ __(_) |_| |__  _ __ ___   ___| |_(_) ___    */
 /*    / _` | '__| | __| '_ \| '_ ` _ \ / _ \ __| |/ __|   */
@@ -242,30 +282,31 @@ LISPINY_DECLARE_ARITHMETIC_OPERATORS(modulus,    %)
 /*   \___\___/|_| |_| |_| .__/ \__,_|_|  |_|___/\___/|_| |_|   */
 /*                      |_|                                    */
 
-#define LISPINY_DECLARE_COMPARISON_OPERATORS(name, op)                    \
-    struct name##_t                                                       \
-    {                                                                     \
-        template<auto Cons>                                               \
-        constexpr auto apply() const                                      \
-        {                                                                 \
-            if constexpr (std::is_same_v<decltype(eval<car<Cons>>),       \
-                                         decltype(eval<car<cdr<Cons>>>)>) \
-            {                                                             \
-                if constexpr(eval<car<Cons>> op eval<car<cdr<Cons>>>)     \
-                {                                                         \
-                    return T;                                             \
-                }                                                         \
-                else                                                      \
-                {                                                         \
-                    return nil;                                           \
-                }                                                         \
-            }                                                             \
-            else                                                          \
-            {                                                             \
-                return nil;                                               \
-            }                                                             \
-        }                                                                 \
-    };                                                                    \
+#define LISPINY_DECLARE_COMPARISON_OPERATORS(name, op)                             \
+    struct name##_t                                                                \
+    {                                                                              \
+        template<auto Cons>                                                        \
+        constexpr auto apply() const                                               \
+        {                                                                          \
+            using car_type  = std::remove_cvref_t<decltype(eval<car<Cons>>)>;      \
+            using cadr_type = std::remove_cvref_t<decltype(eval<car<cdr<Cons>>>)>; \
+            if constexpr (std::is_same_v<car_type, cadr_type>)                     \
+            {                                                                      \
+                if constexpr(eval<car<Cons>> op eval<car<cdr<Cons>>>)              \
+                {                                                                  \
+                    return T;                                                      \
+                }                                                                  \
+                else                                                               \
+                {                                                                  \
+                    return nil;                                                    \
+                }                                                                  \
+            }                                                                      \
+            else                                                                   \
+            {                                                                      \
+                return nil;                                                        \
+            }                                                                      \
+        }                                                                          \
+    };                                                                             \
     inline constexpr name##_t name; /**/
 
 LISPINY_DECLARE_COMPARISON_OPERATORS(eq,    ==)
@@ -362,6 +403,11 @@ constexpr string<digits_of(Int)+1> to_string_impl()
         retval.str[0] = '-';
         x = -x;
     }
+    if(x == 0)
+    {
+        retval.str[0] = '0';
+        return retval;
+    }
     while(0 < x)
     {
         retval.str[i] = char(48) + x % 10;
@@ -432,59 +478,34 @@ struct if_t
 };
 inline constexpr if_t if_;
 
-/*    _ _     _      */
-/*   | (_)___| |_    */
-/*   | | / __| __|   */
-/*   | | \__ \ |_    */
-/*   |_|_|___/\__|   */
-/*                   */
+/*            _     _ _        */
+/*  __      _| |__ (_) | ___   */
+/*  \ \ /\ / / '_ \| | |/ _ \  */
+/*   \ V  V /| | | | | |  __/  */
+/*    \_/\_/ |_| |_|_|_|\___|  */
+/*                             */
 
-// just an alias of `cons< cons< cons< ... > > >`.
-
-template<auto Car, auto ... Cdr>
-constexpr auto expand_list()
+struct while_t
 {
-    if constexpr (sizeof...(Cdr) == 0)
+    template<auto Env, auto Cond, auto Body>
+    constexpr auto apply_impl() const
     {
-        return cons<Car, nil>;
+        if constexpr (eval<cons<Cond, Env>>)
+        {
+            return apply_impl<eval<cons<Body, Env>>, Cond, Body>();
+        }
+        else
+        {
+            return Env;
+        }
     }
-    else
+    template<auto Cons>
+    constexpr auto apply() const
     {
-        return cons<Car, expand_list<Cdr...>()>;
+        return apply_impl< car<Cons>, car<cdr<Cons>>, car<cdr<cdr<Cons>>> >();
     }
-}
-
-template<auto ... Elem>
-struct list_t
-{
-    static constexpr auto value = expand_list<Elem...>();
 };
-template<auto ... Elem>
-inline constexpr auto list = list_t<Elem...>::value;
+inline constexpr while_t while_;
 
 } // lispiny
-
-int main()
-{
-    using namespace lispiny;
-
-    static_assert(eval<cons<plus, cons<1, cons<2, cons<3, cons<4, nil>>>>>> == 10);
-    static_assert(eval<list<plus, 1, 2, 3, 4>                  >            == 10);
-    static_assert(eval<list<plus, string("foo"), string("bar")>>            == string("foobar"));
-    static_assert(eval<list<multiplies, 3, 4>                  >            == 12);
-    static_assert(eval<list<plus, 1, 2, list<multiplies, 3, 4>>>            == 15);
-
-    static_assert(eval<list<if_, list<eq, 1, 2>, list<plus, 1, 2>, list<multiplies, 3, 4>>> == 12);
-
-    constexpr auto plus1 = lambda<list<plus, 1, arg<0>>>;
-    static_assert(eval<list<plus1, 2>> == 3);
-    static_assert(eval<list<plus1, 3>> == 4);
-
-	static_assert(eval<list<to_string,              2>> == string("2"));
-	static_assert(eval<list<to_string,           1, 2>> == string("12"));
-	static_assert(eval<list<to_string,    string("2")>> == string("2"));
-	static_assert(eval<list<to_string, 1, string("2")>> == string("12"));
-	static_assert(eval<list<plus, list<to_string, 2>, list<to_string, 3> >> == string("23"));
-
-    return 0;
-}
+#endif // LISPINY_HPP
