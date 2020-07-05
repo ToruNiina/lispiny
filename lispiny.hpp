@@ -56,9 +56,9 @@ std::ostream& operator<<(std::ostream& os, cons_t<Car, Cdr>)
 /*                                   */
 
 template<auto Car, auto Cdr>
-constexpr decltype(Car) car_helper(cons_t<Car, Cdr>) {return Car;}
+constexpr auto car_helper(cons_t<Car, Cdr>) {return Car;}
 template<auto Car, auto Cdr>
-constexpr decltype(Cdr) cdr_helper(cons_t<Car, Cdr>) {return Cdr;}
+constexpr auto cdr_helper(cons_t<Car, Cdr>) {return Cdr;}
 
 template<auto Cons>
 inline constexpr auto car = car_helper(Cons);
