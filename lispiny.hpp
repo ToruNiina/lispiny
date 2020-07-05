@@ -22,8 +22,8 @@ inline constexpr std::nullptr_t nil = nullptr;
 inline constexpr bool           T   = true;
 
 template<auto Expr>
-struct is_nil: std::bool_constant<
-    std::is_same_v<std::remove_cvref_t<decltype(Expr)>, std::nullptr_t>>{};
+inline constexpr bool is_nil =
+    std::is_same_v<std::remove_cvref_t<decltype(Expr)>, std::nullptr_t>;
 
 /*    ___ ___  _ __  ___    */
 /*   / __/ _ \| '_ \/ __|   */
@@ -224,7 +224,7 @@ inline constexpr lambda_t<Body> lambda;
         template<auto Cons, typename Result>                                \
         constexpr auto apply_helper(Result x) const                         \
         {                                                                   \
-            if constexpr(is_nil<cdr<Cons>>::value)                          \
+            if constexpr(is_nil<cdr<Cons>>)                                 \
             {                                                               \
                 return x op eval<car<Cons>>;                                \
             }                                                               \
@@ -403,7 +403,7 @@ struct to_string_t
     template<auto Expr>
     constexpr auto apply_helper() const
     {
-        if constexpr (is_nil<cdr<Expr>>::value)
+        if constexpr (is_nil<cdr<Expr>>)
         {
             return to_string_impl<eval<car<Expr>>>();
         }
