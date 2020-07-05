@@ -99,12 +99,7 @@ constexpr auto expand_list()
 }
 
 template<auto ... Elem>
-struct list_t
-{
-    static constexpr auto value = expand_list<Elem...>();
-};
-template<auto ... Elem>
-inline constexpr auto list = list_t<Elem...>::value;
+inline constexpr auto list = expand_list<Elem...>();
 
 /*                   _    */
 /*    _____   ____ _| |   */
