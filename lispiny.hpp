@@ -39,7 +39,7 @@ inline constexpr cons_t<Car, Cdr> cons;
 template<typename Cons>      struct is_cons_t : std::false_type{};
 template<auto Car, auto Cdr> struct is_cons_t<cons_t<Car, Cdr>>: std::true_type{};
 template<auto Cons>
-struct is_cons : is_cons_t<std::remove_cvref_t<decltype(Cons)>> {};
+inline constexpr bool is_cons = is_cons_t<std::remove_cvref_t<decltype(Cons)>>::value;
 
 template<auto Car, auto Cdr>
 std::ostream& operator<<(std::ostream& os, cons_t<Car, Cdr>)
@@ -132,7 +132,7 @@ constexpr auto is_applicable()
 template<auto Expr>
 constexpr bool is_reducible()
 {
-    if constexpr (is_cons<Expr>::value)
+    if constexpr (is_cons<Expr>)
     {
         return is_applicable<car<Expr>, cdr<Expr>>() ||
                is_reducible<car<Expr>>() || is_reducible<cdr<Expr>>();
@@ -146,7 +146,7 @@ constexpr bool is_reducible()
 template<auto Expr>
 constexpr auto evaluate()
 {
-    if constexpr (is_cons<Expr>::value)
+    if constexpr (is_cons<Expr>)
     {
         if constexpr (is_applicable<car<Expr>, cdr<Expr>>())
         {
@@ -208,7 +208,7 @@ constexpr auto find_helper()
 template<auto Expr, auto Args>
 constexpr auto substitute()
 {
-    if constexpr (is_cons<Expr>::value)
+    if constexpr (is_cons<Expr>)
     {
         return cons<substitute<car<Expr>, Args>(), substitute<cdr<Expr>, Args>()>;
     }
@@ -459,7 +459,7 @@ struct if_t
     template<auto Cons>
     constexpr auto apply() const
     {
-        if constexpr(is_cons<Cons>::value)
+        if constexpr(is_cons<Cons>)
         {
             if constexpr(static_cast<bool>(eval<car<Cons>>))
             {
