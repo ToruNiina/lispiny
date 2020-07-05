@@ -163,7 +163,7 @@ inline constexpr arg_t<Index> arg;
 template<typename    T> struct is_arg_t           : std::false_type {};
 template<std::size_t I> struct is_arg_t<arg_t<I>> : std::true_type  {};
 template<auto Expr>
-struct is_arg : is_arg_t<std::remove_cvref_t<decltype(Expr)>> {};
+inline constexpr bool is_arg = is_arg_t<std::remove_cvref_t<decltype(Expr)>>::value;
 
 template<auto ArgList, std::size_t Arg>
 constexpr auto find_helper()
@@ -186,7 +186,7 @@ constexpr auto substitute()
     {
         return cons<substitute<car<Expr>, Args>(), substitute<cdr<Expr>, Args>()>;
     }
-    else if constexpr (is_arg<Expr>::value)
+    else if constexpr (is_arg<Expr>)
     {
         return find_helper<Args, Expr.value>();
     }
