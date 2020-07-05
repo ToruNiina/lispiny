@@ -61,20 +61,9 @@ template<auto Car, auto Cdr>
 constexpr decltype(Cdr) cdr_helper(cons_t<Car, Cdr>) {return Cdr;}
 
 template<auto Cons>
-struct car_t
-{
-    static constexpr auto value = car_helper(Cons);
-};
+inline constexpr auto car = car_helper(Cons);
 template<auto Cons>
-inline constexpr auto car = car_t<Cons>::value;
-
-template<auto Cons>
-struct cdr_t
-{
-    static constexpr auto value = cdr_helper(Cons);
-};
-template<auto Cons>
-inline constexpr auto cdr = cdr_t<Cons>::value;
+inline constexpr auto cdr = cdr_helper(Cons);
 
 /*    _ _     _      */
 /*   | (_)___| |_    */
@@ -154,12 +143,7 @@ constexpr auto evaluate()
 }
 
 template<auto Cons>
-struct eval_t
-{
-    static constexpr auto value = evaluate<Cons>();
-};
-template<auto Cons>
-inline constexpr auto eval = eval_t<Cons>::value;
+inline constexpr auto eval = evaluate<Cons>();
 
 /*    _                 _         _         */
 /*   | | __ _ _ __ ___ | |__   __| | __ _   */
