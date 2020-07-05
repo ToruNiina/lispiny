@@ -55,13 +55,8 @@ std::ostream& operator<<(std::ostream& os, cons_t<Car, Cdr>)
 /*  \___\__,_|_|/_/ \___\__,_|_|     */
 /*                                   */
 
-template<typename Cons>
-constexpr auto car_helper(Cons) {return car_helper(Cons::value);}
 template<auto Car, auto Cdr>
 constexpr decltype(Car) car_helper(cons_t<Car, Cdr>) {return Car;}
-
-template<typename Cons>
-constexpr auto cdr_helper(Cons) {return cdr_helper(Cons::value);}
 template<auto Car, auto Cdr>
 constexpr decltype(Cdr) cdr_helper(cons_t<Car, Cdr>) {return Cdr;}
 
